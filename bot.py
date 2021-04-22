@@ -1,11 +1,10 @@
+#Подключение библиотек
 import config
 import logging
-
-import keyboars as k
-
-from boltyshka import *
-
 from aiogram import Bot, Dispatcher, executor, types
+#Подключение файлов
+import keyboars as k
+from boltyshka import *
 from sqlighter import SQLighter
 
 # задаем уровень логов
@@ -17,9 +16,10 @@ dp = Dispatcher(bot)
 
 # инициализируем соединение с БД
 db = SQLighter('db.db')
+
 # Команда активации подписки
 @dp.message_handler(commands=['start'])
-async def subscribe(message: types.Message):
+async def welcome(message: types.Message):
 	config.boboltyshkaBool = False
 	config.helloBool = True
 	config.menuBool = False
@@ -45,6 +45,17 @@ async def menu(message: types.Message):
     await bot.send_message(message.chat.id, '🔡Добро пожаловать в меню🔢\nЧто ты хочешь чтобы я сделал?🤔',
     reply_markup=k.menu)
 
+#команды для отправки рассылки об обновлении
+@dp.message_handler(commands=['spam'])
+async def spam(message: types.Message):
+	if (message.chat.id == 650920012):
+		subscriptions = db.get_subscriptions()
+		for s in subscriptions:
+			await bot.send_message(s[1],f'{message.chat.username}, привет!👋🏻\nЕсли ты видишь это сообщение👀, то мой создатель домучился😅\nТеперь о каждом обновлении буду говорить тебе я😊\n🆕Из нового:🆕\n-Тепрь команда "/start" не такая уж и бесполезная, можешь вызвать и попытаться зайти не под собой😏\n-Ну конечно же уведомления об обновлениях🔔🆕\nP.S.: Создатель угрохал на это кучу сил и нервов, но когда получилось, то скакал от счастья. Это надо было видеть🤣\n-В списке команд появилась команда рассылки обновы, но даже не пытайся её использовать - ничего не выйдет😇',
+		parse_mode="HTML")
+	else:
+		await bot.send_message(message.chat.id, 'Прости, но у тебя не достаточно прав для этой команды😔')
+
 #хрень с сообщениями
 @dp.message_handler()
 async def echo_message(message: types.Message):
@@ -59,11 +70,20 @@ async def callback_inline(call: types.CallbackQuery):
 	if call.message:
 		if config.helloBool == True: #ответы на приветствие
 			if call.data == 'H1':
-				await bot.send_message(call.message.chat.id, 'О, мой Повелитель!😇\nПришел редачить меня?😏\nХочу новые функции😢')
+				if (call.message.chat.id == 650920012):
+					await bot.send_message(call.message.chat.id, 'О, мой Повелитель!😇\nПришел редачить меня?😏\nХочу новые функции😢')
+				else:
+					await bot.send_message(call.message.chat.id, 'Ты не мой создатель!😡\nЯ его знаю, как-никто другой.\nТак кто ты?🤔',reply_markup=k.hello)
 			elif call.data == 'H2':
-				await bot.send_message(call.message.chat.id, 'Оу-у-у, как долго я тебя ждал❤️\nВкраце:\nЯ версия номер:2️⃣\nВызови 🔡меню🔢 командой, чтобы с мной взаимодействовать😊\n📝P.S.:Нажми или введи "/"📝')
+				if (call.message.chat.id == 735542467):
+					await bot.send_message(call.message.chat.id, 'Оу-у-у, как долго я тебя ждал❤️\nВкраце:\nЯ версия номер:3️⃣\nВызови 🔡меню🔢 командой, чтобы с мной взаимодействовать😊\n📝P.S.:Нажми или введи "/"📝')
+				else:
+					await bot.send_message(call.message.chat.id, 'Ты не его невеста!😡\nЯ её знаю, как-никто другой.\nТак кто ты?🤔',reply_markup=k.hello)
 			elif call.data == 'H3':
-				await bot.send_message(call.message.chat.id, 'Вау, ну и дерзость😯\nЯ тебе ничего не расскажу, сам гадай!😡')
+				if (call.message.chat.id != 735542467 and call.message.chat.id != 650920012):
+					await bot.send_message(call.message.chat.id, 'Вау, ну и дерзость😯\nЯ тебе ничего не расскажу, сам гадай!😡')
+				else:
+					await bot.send_message(call.message.chat.id, 'Оу, как дерзко😏\nНо я же знаю, что ты не абы кто😎\nМожет ответишь честно?🤔',reply_markup=k.hello)
 
 			#удаление inline сообщений
 			await bot.edit_message_reply_markup(call.message.chat.id, call.message.message_id)
@@ -75,7 +95,6 @@ async def callback_inline(call: types.CallbackQuery):
 
 				#удаление inline сообщений
 				await bot.edit_message_reply_markup(call.message.chat.id, call.message.message_id)
-
 
 # запускаем лонг поллинг
 if __name__ == '__main__':
