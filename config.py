@@ -8,3 +8,7 @@ API_TOKEN = '1702052811:AAGsv86KRbXyzzQCVu50YXHuHSmdtLiDayc' # bot token from @B
 boboltyshkaBool = False #переменная для собеседника
 helloBool = False #переменная для приветствия
 menuBool = False #переменная для меню
+connectionBool = False #переменная для связи
+forwardMessage = False #переменная для преотправки идеи
+#временная переменная для переотправки сообщения
+MessageId = 0

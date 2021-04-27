@@ -1,3 +1,5 @@
+# This Python file uses the following encoding: utf-8
+
 #Подключение библиотек
 import config
 import logging
@@ -23,6 +25,8 @@ async def welcome(message: types.Message):
 	config.boboltyshkaBool = False
 	config.helloBool = True
 	config.menuBool = False
+	connectionBool = False 
+	forwardMessage = False 
 
 	await message.answer_sticker(r'CAACAgIAAxkBAAECNgRggH-JCqNBrmdIg5WSs75FVA0OfwACTwADrWW8FGuRHI2HrK-THwQ')	
 
@@ -38,12 +42,13 @@ async def welcome(message: types.Message):
 
 @dp.message_handler(commands=['menu'])
 async def menu(message: types.Message):
-    config.boboltyshkaBool = False
-    config.helloBool = False
-    config.menuBool = True
+	config.boboltyshkaBool = False
+	config.helloBool = False
+	config.menuBool = True
+	connectionBool = False 
+	forwardMessage = False 
 
-    await bot.send_message(message.chat.id, '🔡Добро пожаловать в меню🔢\nЧто ты хочешь чтобы я сделал?🤔',
-    reply_markup=k.menu)
+	await bot.send_message(message.chat.id, '🔡Добро пожаловать в меню🔢\nЧто ты хочешь чтобы я сделал?🤔',reply_markup=k.menu)
 
 #команды для отправки рассылки об обновлении
 @dp.message_handler(commands=['spam'])
@@ -51,7 +56,7 @@ async def spam(message: types.Message):
 	if (message.chat.id == 650920012):
 		subscriptions = db.get_subscriptions()
 		for s in subscriptions:
-			await bot.send_message(s[1],f'{message.chat.username}, привет!👋🏻\nЕсли ты видишь это сообщение👀, то мой создатель домучился😅\nТеперь о каждом обновлении буду говорить тебе я😊\n🆕Из нового:🆕\n-Тепрь команда "/start" не такая уж и бесполезная, можешь вызвать и попытаться зайти не под собой😏\n-Ну конечно же уведомления об обновлениях🔔🆕\nP.S.: Создатель угрохал на это кучу сил и нервов, но когда получилось, то скакал от счастья. Это надо было видеть🤣\n-В списке команд появилась команда рассылки обновы, но даже не пытайся её использовать - ничего не выйдет😇',
+			await bot.send_message(s[1],f'🆕Новости🆕:Проблема оказалась не серьёзной😅Поэтому создатель быстро её решил😊Если вдруг у вас что-то будет не правильно работать⚙️, то в 🔡меню🔢 в раздле 🔊связь🔊 можно найти как связаться с создателем👨🏼‍💻, чтобы сообщить ему об этом🆘',
 		parse_mode="HTML")
 	else:
 		await bot.send_message(message.chat.id, 'Прости, но у тебя не достаточно прав для этой команды😔')
@@ -59,42 +64,88 @@ async def spam(message: types.Message):
 #хрень с сообщениями
 @dp.message_handler()
 async def echo_message(message: types.Message):
-    if config.boboltyshkaBool == True: 
-        await message.reply(pipe.predict([message.text.lower()])[0])
-    else:
-        await message.answer('Прости, но я не знаю чего ты хочешь от меня😓')
+	if config.boboltyshkaBool == True: 
+		await message.reply(pipe.predict([message.text.lower()])[0])
+	elif config.forwardMessage:
+		await bot.edit_message_reply_markup(message.chat.id, message_id=config.MessageId)#удаление inline сообщений 
+		#временная переменная для переотправки сообщения
+		config.MessageId = message.message_id
+
+		await message.reply('Это твоя идея?🤔\nПроверь. Всё верно написал?📝', reply_markup=k.forward)
+	else:
+		await message.answer('Прости, но я не знаю чего ты хочешь от меня😓\nВоспользуйся 🔡меню🔢, чтобы включить, то что тебе нужно🤓')
 
 #ответы бота
 @dp.callback_query_handler()
 async def callback_inline(call: types.CallbackQuery):
 	if call.message:
-		if config.helloBool == True: #ответы на приветствие
-			if call.data == 'H1':
+		if config.helloBool: #ответы на приветствие
+			if call.data == 'Hel1':
 				if (call.message.chat.id == 650920012):
 					await bot.send_message(call.message.chat.id, 'О, мой Повелитель!😇\nПришел редачить меня?😏\nХочу новые функции😢')
 				else:
-					await bot.send_message(call.message.chat.id, 'Ты не мой создатель!😡\nЯ его знаю, как-никто другой.\nТак кто ты?🤔',reply_markup=k.hello)
-			elif call.data == 'H2':
+					await bot.send_message(call.message.chat.id, 'Ты не мой создатель!😡\nЯ его знаю, как-никто другой.Так кто ты?🤔',reply_markup=k.hello)
+			elif call.data == 'Hel2':
 				if (call.message.chat.id == 735542467):
-					await bot.send_message(call.message.chat.id, 'Оу-у-у, как долго я тебя ждал❤️\nВкраце:\nЯ версия номер:3️⃣\nВызови 🔡меню🔢 командой, чтобы с мной взаимодействовать😊\n📝P.S.:Нажми или введи "/"📝')
+					await bot.send_message(call.message.chat.id, 'Оу-у-у, как долго я тебя ждал❤️\nВкраце:\nЯ версия номер:4️⃣\nВызови 🔡меню🔢 командой, чтобы с мной взаимодействовать😊\n📝P.S.:Нажми или введи "/"📝')
 				else:
-					await bot.send_message(call.message.chat.id, 'Ты не его невеста!😡\nЯ её знаю, как-никто другой.\nТак кто ты?🤔',reply_markup=k.hello)
-			elif call.data == 'H3':
+					await bot.send_message(call.message.chat.id, 'Ты не его невеста!😡\nЯ её знаю, как-никто другой.Так кто ты?🤔',reply_markup=k.hello)
+			elif call.data == 'Hel3':
 				if (call.message.chat.id != 735542467 and call.message.chat.id != 650920012):
-					await bot.send_message(call.message.chat.id, 'Вау, ну и дерзость😯\nЯ тебе ничего не расскажу, сам гадай!😡')
+					await bot.send_message(call.message.chat.id, 'Здорово!🤗\nНадеюсь мы с тобой подружимся☺️\nПравда, я ещё не много чего умею😅\nНо в 🔡меню🔢 ты можешь предложить идею моему создателю, если выберешь 🔊связь🔊\nЧтобы пройти в 🔡меню🔢 с моими функциями, введи команду /menu')
 				else:
 					await bot.send_message(call.message.chat.id, 'Оу, как дерзко😏\nНо я же знаю, что ты не абы кто😎\nМожет ответишь честно?🤔',reply_markup=k.hello)
+			elif call.data == 'Hel4':
+				if (call.message.chat.id != 735542467 and call.message.chat.id != 650920012):
+					await bot.send_message(call.message.chat.id, 'Ого, значит тебе обо мне кто-то рассказал😯\nЯ рад, что становлюсь популярным🥰\nПереходи в 🔡меню🔢 командой /menu, чтобы познакомиться с моим функционалом\nЕсли будет что не понятно, то пиши моему создателю👨🏼‍💻\nЕго контакты можно найти в:\n🔡меню🔢->🔊связь🔊')
+				else:
+					await bot.send_message(call.message.chat.id, 'Оу, как дерзко😏\nНо я же знаю, что ты не абы кто😎\nМожет ответишь честно?🤔',reply_markup=k.hello)
+ 
+			await bot.edit_message_reply_markup(call.message.chat.id, call.message.message_id)#удаление inline сообщений
 
-			#удаление inline сообщений
-			await bot.edit_message_reply_markup(call.message.chat.id, call.message.message_id)
-
-		elif config.menuBool == True: #ответы меню
-			if call.data == 'M1':
-				await bot.send_message(call.message.chat.id, '💁🏼‍♂️Включен режим собеседника💁🏼‍♂️\n⛔️Если захочешь прекратить⛔️\nто просто вызови 🔡меню🔢\nТеперь можем поболтать😇')
+		elif config.menuBool: #ответы меню
+			if call.data == 'Men1':
+				await bot.edit_message_text(text='💁🏼‍♂️Включен режим собеседника💁🏼‍♂️\n⛔️Если захочешь прекратить⛔️\nто просто вызови 🔡меню🔢\nТеперь можем поболтать😇', chat_id=call.message.chat.id, message_id=call.message.message_id)
 				config.boboltyshkaBool = True
+			elif call.data == 'Men2':
+				await bot.edit_message_text(text='🔊Добро пожаловать в связь🔊\nЗдесь можно предложить свою идею или узнать контакты моего создателя', chat_id=call.message.chat.id, message_id=call.message.message_id, reply_markup=k.connection)
+				config.connectionBool = True
+			elif call.data == 'Сlose':
+				await bot.edit_message_text(text='🔡Меню🔢\n❌Закрыто❌', chat_id=call.message.chat.id, message_id=call.message.message_id)
+			
+			config.menuBool = False
 
-				#удаление inline сообщений
-				await bot.edit_message_reply_markup(call.message.chat.id, call.message.message_id)
+		elif config.forwardMessage: #подтверждение отправки
+			if call.data == 'fOk':
+				#await bot.edit_message_text(text='', chat_id=call.message.chat.id, message_id=call.message.message_id, reply_markup=k.)
+				await bot.send_message(call.message.chat.id, 'Всё OK👌🏻\nКак создатель будет в сети, я с ним покумекаю😉')
+				await bot.forward_message(chat_id=650920012, from_chat_id=call.message.chat.id, message_id=config.MessageId)
+				await bot.send_message(chat_id=650920012, text= f'{call.message.chat.id}', parse_mode="HTML")
+				await bot.edit_message_reply_markup(call.message.chat.id, call.message.message_id)#удаление inline сообщений
+				config.forwardMessage = False
+			elif call.data == 'fNo':
+				await bot.send_message(call.message.chat.id, 'Жалко😔\n🔁Тогда заново🔁')
+				await bot.send_message(call.message.chat.id, 'Напиши мне следующим сообщением свою идею, которую хочешь, чтобы была реализована🤔\nЯ покмекую с создателем😉\nИ он попытается её реализовать, если это возможно☺️', reply_markup=k.backKeyboard)
+				await bot.edit_message_reply_markup(call.message.chat.id, call.message.message_id)#удаление inline сообщений
+
+			if call.data == 'Back':
+				await bot.edit_message_text(text='🔊Добро пожаловать в связь🔊\nЗдесь можно предложить свою идею или узнать контакты моего создателя', chat_id=call.message.chat.id, message_id=call.message.message_id, reply_markup=k.connection)
+				config.forwardMessage = False
+				config.connectionBool = True
+
+		elif config.connectionBool: #ответы связи
+			if call.data == 'Con1':
+				await bot.send_message(call.message.chat.id, 'Телеграм создателя: @Sm0rb\nФ.И.О: Яньков Егор Сергеевич\nПрошу быть с ним вежливым😇\nP.S.: Он иногда долго отвечает😅')
+				await bot.edit_message_reply_markup(call.message.chat.id, call.message.message_id)#удаление inline сообщений
+			elif call.data == 'Con2':
+				await bot.edit_message_text(text='Напиши мне следующим сообщением свою идею, которую хочешь, чтобы была реализована🤔\nЯ покмекую с создателем😉\nИ он попытается её реализовать, если это возможно☺️', chat_id=call.message.chat.id, message_id=call.message.message_id, reply_markup=k.backKeyboard)
+				config.MessageId = call.message.message_id
+				config.forwardMessage = True
+			elif call.data == 'Back':
+				await bot.edit_message_text(text='🔡Добро пожаловать в меню🔢\nЧто ты хочешь чтобы я сделал?🤔',chat_id=call.message.chat.id, message_id=call.message.message_id, reply_markup=k.menu)
+				config.menuBool = True
+
+			config.connectionBool = False
 
 # запускаем лонг поллинг
 if __name__ == '__main__':
