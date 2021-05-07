@@ -1,6 +1,6 @@
 import json
 import config
-
+from sqlighter import SQLighter
 
 def parse_city_json(json_file='russia.json'):
     p_obj = None
@@ -17,7 +17,7 @@ def parse_city_json(json_file='russia.json'):
 def get_city(city):
     normilize_city = city.strip().lower()
     if is_correct_city_name(normilize_city):
-        if normilize_city[-1] in ('ь', 'ъ'):
+        if normilize_city[-1] in ('ь', 'ъ', 'ы'):
             normilize_city = normilize_city[:-1]
 
         if get_city.previous_city != "" and normilize_city[0] != get_city.previous_city[-1]:
@@ -43,7 +43,7 @@ def get_city(city):
         return 'Не могу понять🧐\n❌Некорректное название города❌\nПопробуй ещё раз'
 
 def winer():
-    config.gameBool = False
+    db.update_valuebool(call.message.chat.id, 'gameBool', False)
     config.winerBool = True
     return 'Я не знаю города на эту букву😰\n🎉Ты выиграл🎉, поздравляю🥳'
 

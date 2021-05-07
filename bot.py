@@ -26,23 +26,13 @@ db = SQLighter('db.db')
 # Команда активации подписки
 @dp.message_handler(commands=['start'])
 async def welcome(message: types.Message):
-    config.boboltyshkaBool = False  # переменная для собеседника
-    config.menuBool = False  # переменная для меню
-    config.gameBool = False  # переменная для игр
-    config.winerBool = False  # переменная для победителя
-    config.connectionBool = False  # переменная для связи
-    config.forwardMessage = False  # переменная для преотправки идеи
-    config.forwardSpam = False  # переменная для преотправки рассылки
-    config.forwardOtvet = False  # переменная для отправки ответа пользователю
-    config.adminBool = False  # переменная администраторской
-    config.helloBool = True
-
+    db.update_bool(message.from_user.id, 'helloBool')
 
     await message.answer_sticker(r'CAACAgIAAxkBAAECNgRggH-JCqNBrmdIg5WSs75FVA0OfwACTwADrWW8FGuRHI2HrK-THwQ')
 
     if not db.subscriber_exists(message.from_user.id):
         # если юзера нет в базе, добавляем его
-        db.add_subscriber(message.from_user.id)
+        db.add_subscriber(message.from_user.id, message.from_user.username)
     else:
         # если он уже есть, то просто обновляем ему статус подписки
         db.update_subscription(message.from_user.id, True)
@@ -56,16 +46,7 @@ async def welcome(message: types.Message):
 
 @dp.message_handler(commands=['menu'])
 async def menu(message: types.Message):
-    config.boboltyshkaBool = False  # переменная для собеседника
-    config.helloBool = False  # переменная для приветствия
-    config.gameBool = False  # переменная для игр
-    config.winerBool = False  # переменная для победителя
-    config.connectionBool = False  # переменная для связи
-    config.forwardMessage = False  # переменная для преотправки идеи
-    config.forwardSpam = False  # переменная для преотправки рассылки
-    config.forwardOtvet = False  # переменная для отправки ответа пользователю
-    config.adminBool = False  # переменная администраторской
-    config.menuBool = True
+    db.update_bool(message.chat.id, 'menuBool')
 
     await bot.send_message(message.chat.id, '🔡Добро пожаловать в меню🔢\nЧто ты хочешь чтобы я сделал?🤔',
                            reply_markup=k.menu)
@@ -75,16 +56,7 @@ async def menu(message: types.Message):
 @dp.message_handler(commands=['admin'])
 async def spam(message: types.Message):
     if message.chat.id == 650920012:
-        config.boboltyshkaBool = False  # переменная для собеседника
-        config.helloBool = False  # переменная для приветствия
-        config.menuBool = False  # переменная для меню
-        config.gameBool = False  # переменная для игр
-        config.winerBool = False  # переменная для победителя
-        config.connectionBool = False  # переменная для связи
-        config.forwardMessage = False  # переменная для преотправки идеи
-        config.forwardSpam = False  # переменная для преотправки рассылки
-        config.forwardOtvet = False  # переменная для отправки ответа пользователю
-        config.adminBool = True
+        db.update_bool(message.from_user.id, 'adminBool')
 
         await bot.send_message(message.chat.id,
                                '👨🏼‍💻Добро пожаловать в администраторскую👨🏼‍💻\nЧто ты хочешь чтобы я сделал?🤔',
@@ -97,28 +69,28 @@ async def spam(message: types.Message):
 # хрень с сообщениями
 @dp.message_handler()
 async def echo_message(message: types.Message):
-    if config.boboltyshkaBool:
+    if db.check_bool(message.chat.id, 'boboltyshkaBool'):
         await message.reply(pipe.predict([message.text.lower()])[0])
 
-    elif config.forwardMessage:
+    elif db.check_bool(message.chat.id, 'forwardMessage'):
         await bot.edit_message_reply_markup(message.chat.id, message_id=config.MessageId)  # удаление inline сообщений
         # временная переменная для переотправки сообщения
         config.MessageId = message.message_id
 
         await message.reply(text=f'Это твоя идея?🤔\nПроверь. Всё верно написал?📝', reply_markup=k.forward)
 
-    elif config.gameBool:
+    elif db.check_bool(message.chat.id, 'gameBool'):
         response = get_city(message.text)
         await bot.send_message(message.chat.id, text=response)
         if config.winerBool:
             await message.answer_sticker(r'CAACAgIAAxkBAAECQnJgkSrJ7PQXHO8ng0pcubvB-GZ0vgACWQADrWW8FPS7RxeJ4S0JHwQ')
             config.winerBool = False
 
-    elif config.forwardSpam:
+    elif db.check_bool(message.chat.id, 'forwardSpam'):
         config.textspam = message.text
         await bot.send_message(message.chat.id, text=config.textspam + '\nТак?', reply_markup=k.forward)
 
-    elif config.forwardOtvet:
+    elif db.check_bool(message.chat.id, 'forwardOtvet'):
         string = message.text
         razdelitel = string.find('!')
         config.UserId = int(string[:razdelitel])
@@ -136,7 +108,7 @@ async def echo_message(message: types.Message):
 @dp.callback_query_handler()
 async def callback_inline(call: types.CallbackQuery):
     if call.message:
-        if config.helloBool:  # ответы на приветствие
+        if db.check_bool(call.message.chat.id, 'helloBool'):  # ответы на приветствие
             if call.data == 'Hel1':
                 if call.message.chat.id == 650920012:
                     await bot.send_message(call.message.chat.id,
@@ -181,31 +153,31 @@ async def callback_inline(call: types.CallbackQuery):
             await bot.edit_message_reply_markup(call.message.chat.id,
                                                 call.message.message_id)  # удаление inline сообщений
 
-        elif config.menuBool:  # ответы меню
+        elif db.check_bool(call.message.chat.id, 'menuBool'):  # ответы меню menuBool
             if call.data == 'Men1':
                 await bot.edit_message_text(
                     text='💁🏼‍♂️Включен режим собеседника💁🏼‍♂️\n⛔️Если захочешь прекратить⛔️\nто просто вызови '
                          '🔡меню🔢\nТеперь можем поболтать😇',
                     chat_id=call.message.chat.id, message_id=call.message.message_id)
-                config.boboltyshkaBool = True
+                db.update_valuebool(call.message.chat.id, 'boboltyshkaBool', True)
             elif call.data == 'Men2':
                 await bot.edit_message_text(
                     text='🔊Добро пожаловать в связь🔊\nЗдесь можно предложить свою идею или узнать контакты моего '
                          'создателя',
                     chat_id=call.message.chat.id, message_id=call.message.message_id, reply_markup=k.connection)
-                config.connectionBool = True
+                db.update_valuebool(call.message.chat.id, 'connectionBool', True)
             elif call.data == 'Men3':
                 await bot.edit_message_text(
                     text='🎲Добро пожаловать в игры🎲\nЗдесь можно с мной в что-нибудь поиграть, для этого выбери игру🙃',
                     chat_id=call.message.chat.id, message_id=call.message.message_id, reply_markup=k.game)
-                config.gameBool = True
+                db.update_valuebool(call.message.chat.id, 'gameBool', True)
             elif call.data == 'Сlose':
                 await bot.edit_message_text(text='🔡Меню🔢\n❌Закрыто❌', chat_id=call.message.chat.id,
                                             message_id=call.message.message_id)
 
-            config.menuBool = False
+            db.update_valuebool(call.message.chat.id, 'menuBool', False)
 
-        elif config.gameBool:  # ответы игр
+        elif db.check_bool(call.message.chat.id, 'gameBool'):  # ответы игр
             if call.data == 'Gam1':
                 refresh()
                 await bot.edit_message_text(
@@ -219,10 +191,10 @@ async def callback_inline(call: types.CallbackQuery):
                 await bot.edit_message_text(text='🔡Добро пожаловать в меню🔢\nЧто ты хочешь чтобы я сделал?🤔',
                                             chat_id=call.message.chat.id, message_id=call.message.message_id,
                                             reply_markup=k.menu)
-                config.menuBool = True
-                config.gameBool = False
+                db.update_valuebool(call.message.chat.id, 'menuBool', True)
+                db.update_valuebool(call.message.chat.id, 'gameBool', False)
 
-        elif config.forwardMessage:  # подтверждение отправки идеи
+        elif db.check_bool(call.message.chat.id, 'forwardMessage'):  # подтверждение отправки идеи
             if call.data == 'fOk':
                 await bot.send_message(call.message.chat.id,
                                        text=f'Всё OK👌🏻\nКак создатель будет в сети, я с ним покумекаю😉')
@@ -231,7 +203,7 @@ async def callback_inline(call: types.CallbackQuery):
                 await bot.send_message(chat_id=650920012, text=f'{call.message.chat.id}', parse_mode="HTML")
                 await bot.edit_message_reply_markup(call.message.chat.id,
                                                     call.message.message_id)  # удаление inline сообщений
-                config.forwardMessage = False
+                db.update_valuebool(call.message.chat.id, 'forwardMessage', False)
             elif call.data == 'fNo':
                 await bot.send_message(call.message.chat.id, text=f'Жалко😔\n🔁Тогда заново🔁')
                 await bot.send_message(call.message.chat.id,
@@ -248,10 +220,10 @@ async def callback_inline(call: types.CallbackQuery):
                     text='🔊Добро пожаловать в связь🔊\nЗдесь можно предложить свою идею или узнать контакты моего '
                          'создателя',
                     chat_id=call.message.chat.id, message_id=call.message.message_id, reply_markup=k.connection)
-                config.forwardMessage = False
-                config.connectionBool = True
+                db.update_valuebool(call.message.chat.id, 'forwardMessage', False)
+                db.update_valuebool(call.message.chat.id, 'connectionBool', True)
 
-        elif config.connectionBool:  # ответы связи
+        elif db.check_bool(call.message.chat.id, 'connectionBool'):  # ответы связи
             if call.data == 'Con1':
                 await bot.send_message(call.message.chat.id,
                                        'Телеграм создателя: @Sm0rb\nФ.И.О: Яньков Егор Сергеевич\nПрошу быть с ним '
@@ -264,49 +236,49 @@ async def callback_inline(call: types.CallbackQuery):
                          f'покмекую с создателем😉\nИ он попытается её реализовать, если это возможно☺️',
                     chat_id=call.message.chat.id, message_id=call.message.message_id, reply_markup=k.backKeyboard)
                 config.MessageId = call.message.message_id
-                config.forwardMessage = True
+                db.update_valuebool(call.message.chat.id, 'forwardMessage', True)
             elif call.data == 'Back':
                 await bot.edit_message_text(text='🔡Добро пожаловать в меню🔢\nЧто ты хочешь чтобы я сделал?🤔',
                                             chat_id=call.message.chat.id, message_id=call.message.message_id,
                                             reply_markup=k.menu)
-                config.menuBool = True
+                db.update_valuebool(call.message.chat.id, 'menuBool', True)
 
-            config.connectionBool = False
+            db.update_valuebool(call.message.chat.id, 'connectionBool', False)
 
-        elif config.adminBool:  # ответы администраторской
+        elif db.check_bool(call.message.chat.id, 'adminBool'):  # ответы администраторской
             if call.data == 'Adm1':
                 await bot.edit_message_text(chat_id=call.message.chat.id, message_id=call.message.message_id,
                                             text='Добро пожаловать в 🆕Рассылку обновлений🆕\nХочешь разослать '
                                                  'следующее уведомление об обновлении?🤔')
                 await bot.send_message(call.message.chat.id, text=config.textspam + '\n\nВсё правильно?',
                                        reply_markup=k.forward)
-                config.forwardSpam = True
+                db.update_valuebool(call.message.chat.id, 'forwardSpam', True)
             elif call.data == 'Adm2':
                 await bot.edit_message_text(chat_id=call.message.chat.id, message_id=call.message.message_id,
                                             text='Добро пожаловать в ✉️Ответы пользователю✉️\nКому хочешь ответить и '
                                                  'что?🤔\nФормат:\n(id пользователя!сообщение)')
-                config.forwardOtvet = True
+                db.update_valuebool(call.message.chat.id, 'forwardOtvet', True)
             elif call.data == 'Сlose':
                 await bot.edit_message_text(text='👨🏼‍💻Администраторская👨🏼‍💻\n❌Закрыто❌',
                                             chat_id=call.message.chat.id,
                                             message_id=call.message.message_id)
 
-            config.adminBool = False
+            db.update_valuebool(call.message.chat.id, 'adminBool', False)
 
-        elif config.forwardSpam:  # подтверждение отправки уведомления
+        elif db.check_bool(call.message.chat.id, 'forwardSpam'):  # подтверждение отправки уведомления
             if call.data == 'fOk':
                 await bot.send_message(call.message.chat.id, 'Понял создатель👌🏼\nОтправляю📩')
 
-                subscriptions = db.get_subscriptions()
+                subscriptions = config.subscriptions#db.get_subscriptions()
                 for s in subscriptions:
                     try:
-                        await bot.send_message(s[1],
+                        await bot.send_message(s,
                                                text=config.textspam,
                                                parse_mode="HTML")
                     except:
                         continue
 
-                config.forwardSpam = False
+                db.update_valuebool(call.message.chat.id, 'forwardSpam', False)
 
             elif call.data == 'fNo':
                 await bot.send_message(call.message.chat.id, text='Жалко😔\nНапиши мне его')
@@ -314,7 +286,7 @@ async def callback_inline(call: types.CallbackQuery):
             await bot.edit_message_reply_markup(call.message.chat.id,
                                                 message_id=call.message.message_id)  # удаление inline сообщений
 
-        elif config.forwardOtvet:  # подтверждение отправки ответа
+        elif db.check_bool(call.message.chat.id, 'forwardOtvet'):  # подтверждение отправки ответа
             if call.data == 'fOk':
                 await bot.send_message(call.message.chat.id, 'Понял создатель👌🏼\nОтправляю📩')
                 try:
@@ -324,7 +296,7 @@ async def callback_inline(call: types.CallbackQuery):
                 except:
                     await bot.send_message(call.message.chat.id, 'К сожалению я ему не могу написать😔')
 
-                config.forwardOtvet = False
+                db.update_valuebool(call.message.chat.id, 'forwardOtvet', False)
 
             elif call.data == 'fNo':
                 await bot.send_message(call.message.chat.id,
