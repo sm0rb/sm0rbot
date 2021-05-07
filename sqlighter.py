@@ -18,10 +18,10 @@ class SQLighter:
             result = self.cursor.execute("SELECT * FROM subscriptions WHERE user_id = ?", [(user_id)]).fetchall()
             return bool(len(result))
 
-    def add_subscriber(self, user_id, username):
+    def add_subscriber(self, user_id, username=None):
         """Добавляем нового подписчика"""
         with self.connection:
-            return self.cursor.execute("INSERT INTO subscriptions (user_id, username) VALUES(?,?)", [(user_id, username)])
+            return self.cursor.execute("INSERT INTO subscriptions (user_id, username) VALUES(?,?)", (user_id, username))
 
     def update_subscription(self, user_id, status):
         """Обновляем статус подписки пользователя"""
