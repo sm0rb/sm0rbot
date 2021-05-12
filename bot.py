@@ -269,10 +269,10 @@ async def callback_inline(call: types.CallbackQuery):
             if call.data == 'fOk':
                 await bot.send_message(call.message.chat.id, 'Понял создатель👌🏼\nОтправляю📩')
 
-                subscriptions = config.subscriptions#db.get_subscriptions()
+                subscriptions = db.get_subscriptions()
                 for s in subscriptions:
                     try:
-                        await bot.send_message(s,
+                        await bot.send_message(s[1],
                                                text=config.textspam,
                                                parse_mode="HTML")
                     except:
