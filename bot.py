@@ -26,16 +26,16 @@ db = SQLighter('db.db')
 # Команда активации подписки
 @dp.message_handler(commands=['start'])
 async def welcome(message: types.Message):
-    db.update_bool(message.from_user.id, 'helloBool')
-
-    await message.answer_sticker(r'CAACAgIAAxkBAAECNgRggH-JCqNBrmdIg5WSs75FVA0OfwACTwADrWW8FGuRHI2HrK-THwQ')
-
     if not db.subscriber_exists(message.from_user.id):
         # если юзера нет в базе, добавляем его
         db.add_subscriber(message.from_user.id, message.from_user.username)
     else:
         # если он уже есть, то просто обновляем ему статус подписки
         db.update_subscription(message.from_user.id, True)
+
+    db.update_bool(message.from_user.id, 'helloBool')
+
+    await message.answer_sticker(r'CAACAgIAAxkBAAECNgRggH-JCqNBrmdIg5WSs75FVA0OfwACTwADrWW8FGuRHI2HrK-THwQ')
 
     await bot.send_message(message.chat.id,
                            f'{message.chat.username}, рад тебя видеть!😍\nЯ - <b>Рыжик</b>☀️, создан рыжим '
@@ -83,6 +83,7 @@ async def echo_message(message: types.Message):
         response = get_city(message.text)
         await bot.send_message(message.chat.id, text=response)
         if config.winerBool:
+            db.update_valuebool(message.chat.id, 'gameBool', False)
             await message.answer_sticker(r'CAACAgIAAxkBAAECQnJgkSrJ7PQXHO8ng0pcubvB-GZ0vgACWQADrWW8FPS7RxeJ4S0JHwQ')
             config.winerBool = False
 
