@@ -22,6 +22,9 @@ dp = Dispatcher(bot)
 # инициализируем соединение с БД
 db = SQLighter('db.db')
 
+# инициализируем соединение с игрой
+game = City_game()
+game.parse_city_json() #загрузка списка городов
 
 # Команда активации подписки
 @dp.message_handler(commands=['start'])
@@ -80,7 +83,7 @@ async def echo_message(message: types.Message):
         await message.reply(text=f'Это твоя идея?🤔\nПроверь. Всё верно написал?📝', reply_markup=k.forward)
 
     elif db.check_bool(message.chat.id, 'gameBool'):
-        response = get_city(message.text)
+        response = game.get_city(message.chat.id, message.text)
         await bot.send_message(message.chat.id, text=response)
         if config.winerBool:
             db.update_valuebool(message.chat.id, 'gameBool', False)
@@ -89,7 +92,7 @@ async def echo_message(message: types.Message):
 
     elif db.check_bool(message.chat.id, 'forwardSpam'):
         config.textspam = message.text
-        await bot.send_message(message.chat.id, text=config.textspam + '\nТак?', reply_markup=k.forward)
+        await bot.send_message(message.chat.id, text=config.textspam + '\n\nТак?', reply_markup=k.forward)
 
     elif db.check_bool(message.chat.id, 'forwardOtvet'):
         string = message.text
@@ -180,7 +183,10 @@ async def callback_inline(call: types.CallbackQuery):
 
         elif db.check_bool(call.message.chat.id, 'gameBool'):  # ответы игр
             if call.data == 'Gam1':
-                refresh()
+                if not game.check_user(call.message.chat.id):
+                    game.add_user(call.message.chat.id)
+                else:
+                    game.refresh(call.message.chat.id)
                 await bot.edit_message_text(
                     text='Это классическая игра в 🌆города🌆, которую все знают.\nНо я знаю только города России, '
                          'так что у тебя есть фора😏\nПросьба писать только существующие города, '
